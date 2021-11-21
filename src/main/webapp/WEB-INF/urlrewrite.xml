@@ -1,0 +1,13 @@
+<!--
+    Configuration file for UrlRewriteFilter
+    http://www.tuckey.org/urlrewrite/
+-->
+<urlrewrite>
+    <rule>
+        <note>
+            Enable client side routing by forwarding all frontend requests to index.html
+        </note>
+        <from>^/view/?(.*)</from>
+        <to>/index.html</to>
+    </rule>
+</urlrewrite>

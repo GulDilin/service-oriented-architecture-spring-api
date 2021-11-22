@@ -37,7 +37,7 @@ public class HumanController {
     public EntityListDTO getItems(
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
-            @RequestParam(value="sorting[]", required = false) String[] sorting,
+            @RequestParam(required = false) String[] sorting,
             HttpServletRequest request
     ) {
         return crudController.getItems(limit, offset, sorting, request);

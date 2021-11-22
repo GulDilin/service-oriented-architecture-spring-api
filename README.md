@@ -22,7 +22,7 @@
 A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
 TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
 S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
-            sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+           sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
 />
 ```
 4. If you chose another port instead of 8443 you need to change `redirectPort` in your default connectors

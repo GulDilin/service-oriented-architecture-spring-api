@@ -2,17 +2,17 @@ package guldilin.controller;
 
 
 import guldilin.dto.CoordinatesDTO;
+import guldilin.dto.EntityListDTO;
 import guldilin.entity.Coordinates;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/api/coordinates/*")
-public class CoordinatesController extends HttpServlet {
+@RestController
+@RequestMapping("/api/coordinates")
+public class CoordinatesController {
     private final CrudController<Coordinates, CoordinatesDTO> crudController;
 
     public CoordinatesController() {
@@ -34,26 +34,37 @@ public class CoordinatesController extends HttpServlet {
     }
 
     @SneakyThrows
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doGet(request, response);
+    @GetMapping
+    public EntityListDTO getItems(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(value="sorting[]", required = false) String[] sorting,
+            HttpServletRequest request
+    ) {
+        return crudController.getItems(limit, offset, sorting, request);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPost(request, response);
+    @GetMapping("{id}")
+    public CoordinatesDTO getItemById(@PathVariable Integer id) {
+        return (CoordinatesDTO) crudController.getById(id);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPut(request, response);
+    @PostMapping()
+    public CoordinatesDTO createItem(@RequestBody CoordinatesDTO coordinatesDTO) {
+        return (CoordinatesDTO) crudController.createItem(coordinatesDTO);
     }
 
     @SneakyThrows
-    @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doDelete(request);
+    @PutMapping("{id}")
+    public void replaceItem(@PathVariable Integer id, @RequestBody CoordinatesDTO coordinatesDTO) {
+        crudController.replaceItem(id, coordinatesDTO);
+    }
+
+    @SneakyThrows
+    @DeleteMapping("{id}")
+    public void deleteItem(@PathVariable Integer id) {
+        crudController.deleteItem(id);
     }
 }

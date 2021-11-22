@@ -1,18 +1,18 @@
 package guldilin.controller;
 
 
+import guldilin.dto.EntityListDTO;
 import guldilin.dto.HumanDTO;
 import guldilin.entity.Human;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/api/human/*")
-public class HumanController extends HttpServlet {
+@RestController
+@RequestMapping("/api/human")
+public class HumanController {
     private final CrudController<Human, HumanDTO> crudController;
 
     public HumanController() {
@@ -33,26 +33,37 @@ public class HumanController extends HttpServlet {
     }
 
     @SneakyThrows
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doGet(request, response);
+    @GetMapping
+    public EntityListDTO getItems(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(value="sorting[]", required = false) String[] sorting,
+            HttpServletRequest request
+    ) {
+        return crudController.getItems(limit, offset, sorting, request);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPost(request, response);
+    @GetMapping("/{id}")
+    public HumanDTO getItemById(@PathVariable Integer id) {
+        return (HumanDTO) crudController.getById(id);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPut(request, response);
+    @PostMapping()
+    public HumanDTO createItem(@RequestBody HumanDTO humanDTO) {
+        return (HumanDTO) crudController.createItem(humanDTO);
     }
 
     @SneakyThrows
-    @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doDelete(request);
+    @PutMapping("/{id}")
+    public void replaceItem(@PathVariable Integer id, @RequestBody HumanDTO humanDTO) {
+        crudController.replaceItem(id, humanDTO);
+    }
+
+    @SneakyThrows
+    @DeleteMapping("/{id}")
+    public void deleteItem(@PathVariable Integer id) {
+        crudController.deleteItem(id);
     }
 }

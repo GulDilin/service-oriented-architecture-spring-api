@@ -2,6 +2,103 @@
 
 ### Variant 3005.11
 
+### Setup HTTPS for tomcat
+1. `$JAVA_HOME/bin/keytool -genkey -alias tomcat -keyalg RSA`
+2. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
+3. To Connectors section add
+```xml
+<Connector port="8443"
+           protocol="HTTP/1.1"
+           maxThreads="150"
+           scheme="https"
+           secure="true"
+           SSLEnabled="true"
+           keystoreFile="${user.home}/.keystore"
+           keyAlias="tomcat"
+           keystorePass="password"
+           clientAuth="false"
+           sslProtocol="TLS"
+           ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
+A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
+TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
+S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
+            sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+/>
+```
+4. If you chose another port instead of 8443 you need to change `redirectPort` in your default connectors
+5. Now your can access your app with https,
+but got `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT` error because of self-signed cert
+
+### Fix MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT on tomcat
+```shell
+# Create a Root-CA private keystore capable of issuing SSL certificates
+keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ca.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
+# Export the Root-CA certificate, to be used in the final SSL chain
+keytool -exportcert -alias my-ca -keystore my-ca.jks -storepass pass77 -keypass pass77 -file my-ca.crt -rfc \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
+# Create a container SSL private keystore (external localhost.foo.bar dns entry optional:IE11 domain intranet policy)
+keytool -genkeypair -noprompt -alias my-ssl -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ssl.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=digitalSignature,keyEncipherment \
+-ext eku=serverAuth,clientAuth \
+-ext san=dns:localhost,dns:localhost.foo.bar \
+-ext bc:critical=ca:false
+
+# Create a certificate signing request (CSR) from our SSL private keystore
+keytool -certreq -keyalg RSA -alias my-ssl -file my-ssl.csr -keystore my-ssl.jks -keypass pass77 -storepass pass77
+
+# Issue an SSL certificate from the Root-CA private keystore in response to the request (external localhost.foo.bar dns entry optional)
+keytool -keypass pass77 -storepass pass77 -validity 3650 -keystore my-ca.jks -gencert -alias my-ca -infile my-ssl.csr \
+ -ext ku:critical=digitalSignature,keyEncipherment \
+ -ext eku=serverAuth,clientAuth \
+ -ext san=dns:localhost,dns:localhost.foo.bar \
+ -ext bc:critical=ca:false \
+ -rfc -outfile my-ssl.crt
+
+# Import Root-CA certificate into SSL private keystore
+keytool  -noprompt -import -trustcacerts -alias my-ca -file my-ca.crt -keystore my-ssl.jks \
+-keypass pass77 -storepass pass77
+
+# Import an SSL (chained) certificate into keystore
+keytool -import -trustcacerts -alias my-ssl -file my-ssl.crt -keystore my-ssl.jks \
+-keypass pass77 -storepass pass77 -noprompt
+
+# you got such files
+# * my-ca.jks
+# * my-ca.crt
+# * my-ssl.jks
+# * my-ssl.csr
+# * my-ssl.crt
+```
+
+Result Connector config 
+```xml
+<Connector port="26443"
+           protocol="HTTP/1.1"
+           maxThreads="150"
+           scheme="https"
+           secure="true"
+           SSLEnabled="true"
+           keystoreFile="my-ssl.jks"
+           keyAlias="my-ssl"
+           keystorePass="pass77"
+           SSLCertificateFile="my-ssl.crt"
+           clientAuth="false"
+           sslProtocol="TLS"
+           ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
+A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
+TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
+S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
+           sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+/>
+```
+
 ### Доработать веб-сервис и клиентское приложение из лабораторной работы #1 следующим образом:
 
 1. Отрефакторить сервис из лабораторной работы #1, переписав его на фреймворке Spring MVC REST с сохранением функциональности и API.

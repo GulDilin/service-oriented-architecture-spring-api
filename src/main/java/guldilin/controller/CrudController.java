@@ -1,6 +1,5 @@
 package guldilin.controller;
 
-import com.google.gson.Gson;
 import guldilin.dto.AbstractDTO;
 import guldilin.dto.EntityListDTO;
 import guldilin.entity.AbstractEntity;
@@ -9,14 +8,12 @@ import guldilin.repository.interfaces.CrudRepository;
 import guldilin.utils.FilterAction;
 import guldilin.utils.FilterActionParser;
 import guldilin.utils.FilterableField;
-import guldilin.utils.GsonFactoryBuilder;
 import lombok.Data;
 import org.hibernate.Session;
 
 import javax.persistence.Query;
 import javax.persistence.criteria.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
@@ -28,7 +25,6 @@ public class CrudController<T extends AbstractEntity, D extends AbstractDTO> {
     private Class<T> entityClass;
     private Class<D> dtoClass;
     private CrudRepository<T> repository;
-    private Gson gson;
     private Supplier<List<FilterableField<?>>> getFields;
     private Function<D, T> mapToEntity;
 
@@ -43,14 +39,6 @@ public class CrudController<T extends AbstractEntity, D extends AbstractDTO> {
         this.repository = repository;
         this.getFields = getFields;
         this.mapToEntity = mapToEntity;
-        this.gson = GsonFactoryBuilder.getGson();
-    }
-
-    void doGetById(Integer id, HttpServletResponse response) throws IOException, EntryNotFound {
-        response.getWriter().write(gson.toJson(
-                repository.findById(id)
-                        .orElseThrow(EntryNotFound::new)
-                        .mapToDTO()));
     }
 
     private Predicate parseFilterAction(FilterAction action, CriteriaBuilder cb, Root<?> root) throws FilterTypeNotFound {
@@ -128,23 +116,22 @@ public class CrudController<T extends AbstractEntity, D extends AbstractDTO> {
         return total;
     }
 
-    void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException, FilterTypeNotFound, FilterTypeNotSupported, EntryNotFound, ValidationException {
-        Optional<Integer> id = Optional.ofNullable((Integer) request.getAttribute("id"));
-        if (id.isPresent()) {
-            this.doGetById(id.get(), response);
-            return;
-        }
+    public AbstractDTO getById(Integer id) throws IOException, EntryNotFound {
+        return repository.findById(id)
+                .orElseThrow(EntryNotFound::new)
+                .mapToDTO();
+    }
 
-        int limit = Optional.ofNullable(request.getParameter("limit")).map(Integer::parseInt).orElse(10);
-        int offset = Optional.ofNullable(request.getParameter("offset")).map(Integer::parseInt).orElse(0);
+    public EntityListDTO getItems(Integer limit, Integer offset, String[] orderings, HttpServletRequest request)
+            throws IOException, FilterTypeNotFound, FilterTypeNotSupported, EntryNotFound, ValidationException {
+        limit = Optional.ofNullable(limit).orElse(10);
+        offset = Optional.ofNullable(offset).orElse(0);
         if (limit < 0 || offset < 0) {
             HashMap<String, String> errors = new HashMap<>();
             if (limit < 0) errors.put("limit", ErrorMessage.MIN_0);
             if (offset < 0) errors.put("offset", ErrorMessage.MIN_0);
             throw new ValidationException(errors);
         }
-        String[] orderings = request.getParameterValues("sorting");
 
         Long total = getTotalCount(request);
 
@@ -166,30 +153,24 @@ public class CrudController<T extends AbstractEntity, D extends AbstractDTO> {
         EntityListDTO listDTO = new EntityListDTO();
         listDTO.setResults(entries.stream().map(T::mapToDTO).collect(Collectors.toList()));
         listDTO.setTotal(total);
-
-        response.getWriter().write(gson.toJson(listDTO));
-        session.close();
+        return listDTO;
     }
 
-    public D parseBodyDTO(HttpServletRequest request) throws IOException {
-        return gson.fromJson(request.getReader(), dtoClass);
-    }
-
-    void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        T entry = mapToEntity.apply(parseBodyDTO(request));
+    public AbstractDTO createItem(D dto) throws IOException {
+        T entry = mapToEntity.apply(dto);
         entry.setId(null);
         repository.save(entry);
-        response.getWriter().write(gson.toJson(entry.mapToDTO()));
+        return entry.mapToDTO();
     }
 
-    void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException, EntryNotFound {
-        T entry = mapToEntity.apply(parseBodyDTO(request));
-        entry.setId((Integer) request.getAttribute("id"));
+     public AbstractDTO replaceItem(Integer id, D dto) throws IOException, EntryNotFound {
+        T entry = mapToEntity.apply(dto);
+        entry.setId(id);
         entry = repository.update(entry);
-        doGetById(entry.getId(), response);
+        return getById(entry.getId());
     }
 
-    void doDelete(HttpServletRequest request) throws EntryNotFound {
-        repository.deleteById((Integer) request.getAttribute("id"));
+    public void deleteItem(Integer id) throws EntryNotFound {
+        repository.deleteById(id);
     }
 }

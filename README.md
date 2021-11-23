@@ -1,6 +1,6 @@
-# Service Oriented Architecture. Laboratory Work 2
-
-### Variant 3005.11
+  # Service Oriented Architecture. Laboratory Work 2
+  
+  ### Variant 3005.11
 
 ### Setup HTTPS for tomcat
 1. `$JAVA_HOME/bin/keytool -genkey -alias tomcat -keyalg RSA`
@@ -36,6 +36,12 @@ keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=l
 my-ca.jks -storepass pass77 -keypass pass77 \
 -ext ku:critical=cRLSign,keyCertSign \
 -ext bc:critical=ca:true,pathlen:1
+
+keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ca.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
 
 # Export the Root-CA certificate, to be used in the final SSL chain
 keytool -exportcert -alias my-ca -keystore my-ca.jks -storepass pass77 -keypass pass77 -file my-ca.crt -rfc \

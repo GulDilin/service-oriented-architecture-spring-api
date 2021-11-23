@@ -104,8 +104,6 @@ public class ErrorController {
                 return handleConstraintViolationException(throwable);
             case "javax.persistence.PersistenceException":
                 return handlePersistenceException(throwable);
-//            case "com.google.gson.JsonSyntaxException":
-//                return handleJsonException(throwable);
             case "java.lang.IllegalArgumentException":
                 return handleCauseException(throwable);
             default:

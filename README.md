@@ -38,15 +38,22 @@ S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
 ### Fix Self-Signed certificate error
 
 1. To fix this error you need to download `server.crt` to your computer and add to trusted
-2. `Win+R` and run `mmc` [Run mmc](ssl-guide-images/run.png)
+2. `Win + R` and run `mmc` ![Run mmc](./ssl-guide-images/run.png)
 3. Add certificate
-(ssl-guide-images/mmc-1.png)
-(ssl-guide-images/mmc-2.png)
-(ssl-guide-images/mmc-3.png)
-(ssl-guide-images/mmc-4.png)
-(ssl-guide-images/mmc-5.png)
-(ssl-guide-images/mmc-6.png)
-(ssl-guide-images/mmc-7.png)
+4. Click `Ctrl + M`
+   ![Run mmc](ssl-guide-images/mmc-1.png)
+5. Choose certificates and click `Add`
+   ![Run mmc](ssl-guide-images/mmc-2.png)
+6. Enter the last choice and next
+   ![Run mmc](ssl-guide-images/mmc-3.png)
+7. Choose local computer
+   ![Run mmc](ssl-guide-images/mmc-4.png)
+8. Choose Trusted root certificate folder and click `All Tasks > import` in context menu
+   ![Run mmc](ssl-guide-images/mmc-5.png)
+9. Next
+   ![Run mmc](ssl-guide-images/mmc-6.png)
+10. Next
+   ![Run mmc](ssl-guide-images/mmc-7.png)
 
 
 ### Another way to generate certs for emulation chain

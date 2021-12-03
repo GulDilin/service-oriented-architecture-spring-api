@@ -1,35 +1,55 @@
-  # Service Oriented Architecture. Laboratory Work 2
-  
-  ### Variant 3005.11
+# Service Oriented Architecture. Laboratory Work 2
 
-### Setup HTTPS for tomcat
-1. `$JAVA_HOME/bin/keytool -genkey -alias tomcat -keyalg RSA`
-2. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
-3. To Connectors section add
+### Variant 3005.11
+
+### Setup SSL on tomcat
+
+1. Generate keystore and certificate with next 2 commands
+2. `keytool -genkeypair -keystore server.keystore -alias localhost -ext san=dns:localhost -keyalg rsa -deststoretype jks Picked up _JAVA_OPTIONS: -Xmx128M -Xms128M`
+3. `keytool -keystore server.keystore -alias localhost -ext san=dns:localhost -exportcert -rfc > server.crt Picked up _JAVA_OPTIONS: -Xmx128M -Xms128M`
+4. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
+5. To Connectors section add
 ```xml
-<Connector port="8443"
-           protocol="HTTP/1.1"
-           maxThreads="150"
-           scheme="https"
-           secure="true"
-           SSLEnabled="true"
-           keystoreFile="${user.home}/.keystore"
-           keyAlias="tomcat"
-           keystorePass="password"
-           clientAuth="false"
-           sslProtocol="TLS"
-           ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
+
+<Connector  port="26443"
+            protocol="HTTP/1.1"
+            maxThreads="150"
+            scheme="https"
+            secure="true"
+            SSLEnabled="true"
+            SSLCertificateFile="server.crt"
+            keystoreFile="server.keystore"
+            keyAlias="localhost"
+            keystorePass="password"
+            clientAuth="false"
+            sslProtocol="TLS"
+            ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
 A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
 TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
 S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
-           sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+            sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
 />
+
 ```
 4. If you chose another port instead of 8443 you need to change `redirectPort` in your default connectors
-5. Now your can access your app with https,
-but got `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT` error because of self-signed cert
+5. Now your can access your app with https, but got `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT` or analogical error because of self-signed
+   cert
 
-### Fix MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT on tomcat
+### Fix Self-Signed certificate error
+
+1. To fix this error you need to download `server.crt` to your computer and add to trusted
+2. `Win+R` and run `mmc` [Run mmc](ssl-guide-images/run.png)
+3. Add certificate
+(ssl-guide-images/mmc-1.png)
+(ssl-guide-images/mmc-2.png)
+(ssl-guide-images/mmc-3.png)
+(ssl-guide-images/mmc-4.png)
+(ssl-guide-images/mmc-5.png)
+(ssl-guide-images/mmc-6.png)
+(ssl-guide-images/mmc-7.png)
+
+
+### Another way to generate certs for emulation chain
 ```shell
 # Create a Root-CA private keystore capable of issuing SSL certificates
 keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
@@ -83,8 +103,10 @@ keytool -import -trustcacerts -alias my-ssl -file my-ssl.crt -keystore my-ssl.jk
 # * my-ssl.crt
 ```
 
-Result Connector config 
+Result Connector config
+
 ```xml
+
 <Connector port="26443"
            protocol="HTTP/1.1"
            maxThreads="150"
@@ -107,20 +129,21 @@ S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
 
 ### Доработать веб-сервис и клиентское приложение из лабораторной работы #1 следующим образом:
 
-1. Отрефакторить сервис из лабораторной работы #1, переписав его на фреймворке Spring MVC REST с сохранением функциональности и API.
-Набор функций, реализуемых сервисом, изменяться не должен!
+1. Отрефакторить сервис из лабораторной работы #1, переписав его на фреймворке Spring MVC REST с сохранением
+   функциональности и API. Набор функций, реализуемых сервисом, изменяться не должен!
 2. Развернуть переработанный сервис на сервере приложений Tomcat.
 3. Разработать новый сервис, вызывающий API существующего.
 4. Новый сервис должен быть разработан на базе JAX-RS и развёрнут на сервере приложений Payara.
 5. Разработать клиентское приложение, позволяющее протестировать API нового сервиса.
-6. Доступ к обоим сервисам должен быть реализован с по протоколу https с самоподписанным сертификатом сервера. Доступ к сервисам посредством http без шифрования должен быть запрещён.
+6. Доступ к обоим сервисам должен быть реализован с по протоколу https с самоподписанным сертификатом сервера. Доступ к
+   сервисам посредством http без шифрования должен быть запрещён.
 
 ### Новый сервис должен располагаться на URL /route и реализовывать следующие операции:
+
 ```
 /calculate/length/{id1}/{id2} : рассчитать длину маршрута из города с id=id1 в город с id=id2
 /calculate/to-max-populated : рассчитать длину маршрута от точки с координатами (0,0,0) до города с максимальным населением
 ```
-    
 
 ### Оба веб-сервиса и клиентское приложение должны быть развёрнуты на сервере helios.
 
@@ -142,8 +165,6 @@ S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
 14. Доверенные центры сертификации. Иерархия сертификатов, самоподписанные сертификаты.
 15. Настройка защищённого соединения в Java. Доверенные узлы, хранилища сертификатов.
 16. Keystore & Truststore. Утилита keytool.
-
-
 
 # Service Oriented Architecture. Laboratory Work 1
 

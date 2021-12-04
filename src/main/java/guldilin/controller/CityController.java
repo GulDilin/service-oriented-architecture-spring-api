@@ -84,13 +84,13 @@ public class CityController {
     }
 
     @SneakyThrows
-    @PutMapping("{id}")
+    @PutMapping("/{id}")
     public void replaceItem(@PathVariable Integer id, @RequestBody CityDTO cityDTO) {
         crudController.replaceItem(id, cityDTO);
     }
 
     @SneakyThrows
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     public void deleteItem(@PathVariable Integer id) {
         crudController.deleteItem(id);
     }

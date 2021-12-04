@@ -2,13 +2,60 @@
 
 ### Variant 3005.11
 
+### How to deploy
+
+#### External Tomcat
+1. startup tomcat server
+2. Add a corresponding server block to your settings.xml (Usually `C:\Users\user\.m2\settings.xml`:
+```xml
+<settings>
+  ...
+  <servers>
+    ...
+    <server>
+      <id>myserver</id>
+      <username>myusername</username>
+      <password>mypassword</password>
+    </server>
+    ...
+  </servers>
+  ...
+</settings>
+```
+
+3. In pom.xml edit tomcat data
+```xml
+<configuration>
+    <url>http://localhost:26449/manager/text</url>
+    <server>TomcatHelios</server>
+    <path>/soa-storage</path>
+</configuration>
+```
+4. In `path/to/tomcat/bin` edit `setenv.sh` (if not presented - create) and setup env vars described below.
+You can use `VAR_NAME=VALUE; export VAR_NAME`
+5. Build project with `mvn clean install`
+6. Deploy with command `mvn tomcat7:deploy`
+7. Next times you can redeploy with `mvn tomcat7:redeploy`
+
+#### Environment settings
+| Variable    | Required           | Example   |
+|-------------|--------------------|-----------|
+| DB_NAME     | :white_check_mark: | `soa      ` |
+| DB_HOST     | :white_check_mark: | `127.0.0.1` |
+| DB_PORT     | :white_check_mark: | `5432     ` |
+| DB_USER     | :white_check_mark: | `postgres ` |
+| DB_PASS     | :white_check_mark: | `postgres ` |
+| DB_SHOW_SQL | :x:                | `false`     |
+| DB_USE_SQL_COMMENTS | :x:        | `false`     |
+
 ### Setup SSL on tomcat
 
 1. Generate keystore and certificate with next 2 commands
 2. `keytool -genkeypair -keystore server.keystore -alias localhost -ext san=dns:localhost -keyalg rsa -deststoretype jks Picked up _JAVA_OPTIONS: -Xmx128M -Xms128M`
-3. `keytool -keystore server.keystore -alias localhost -ext san=dns:localhost -exportcert -rfc > server.crt Picked up _JAVA_OPTIONS: -Xmx128M -Xms128M`
-4. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
-5. To Connectors section add
+3. `keytool -keystore server.keystore -alias localhost -ext san=dns:localhost -exportcert -rfc > server.crt`
+4. `keytool -import -noprompt -alias localhost -file server.crt -storepass ${PASSPHRASE} -keystore truststore.jks`
+5. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
+6. To Connectors section add
 ```xml
 
 <Connector  port="26443"

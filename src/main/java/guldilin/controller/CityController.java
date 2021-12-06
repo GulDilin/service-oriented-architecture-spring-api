@@ -9,6 +9,8 @@ import guldilin.errors.ErrorMessage;
 import guldilin.errors.ValidationException;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -85,12 +87,13 @@ public class CityController {
 
     @SneakyThrows
     @PutMapping("/{id}")
-    public void replaceItem(@PathVariable Integer id, @RequestBody CityDTO cityDTO) {
-        crudController.replaceItem(id, cityDTO);
+    public CityDTO replaceItem(@PathVariable Integer id, @RequestBody CityDTO cityDTO) {
+        return (CityDTO) crudController.replaceItem(id, cityDTO);
     }
 
     @SneakyThrows
     @DeleteMapping("/{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteItem(@PathVariable Integer id) {
         crudController.deleteItem(id);
     }

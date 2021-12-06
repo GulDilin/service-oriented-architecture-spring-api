@@ -6,6 +6,7 @@ import guldilin.dto.HumanDTO;
 import guldilin.entity.Human;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,12 +58,13 @@ public class HumanController {
 
     @SneakyThrows
     @PutMapping("/{id}")
-    public void replaceItem(@PathVariable Integer id, @RequestBody HumanDTO humanDTO) {
-        crudController.replaceItem(id, humanDTO);
+    public HumanDTO replaceItem(@PathVariable Integer id, @RequestBody HumanDTO humanDTO) {
+        return (HumanDTO) crudController.replaceItem(id, humanDTO);
     }
 
     @SneakyThrows
     @DeleteMapping("/{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteItem(@PathVariable Integer id) {
         crudController.deleteItem(id);
     }

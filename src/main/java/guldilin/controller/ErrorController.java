@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.persistence.EntityNotFoundException;
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,7 +96,7 @@ public class ErrorController {
     }
 
     @ResponseBody
-    @ExceptionHandler(Throwable.class)
+    @ExceptionHandler(Exception.class)
     protected Object handleException(Throwable throwable) throws IOException {
         String errorName = throwable.getClass().getName();
         switch (errorName) {

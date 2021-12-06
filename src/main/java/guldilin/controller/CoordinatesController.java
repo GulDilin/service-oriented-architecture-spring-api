@@ -6,6 +6,7 @@ import guldilin.dto.EntityListDTO;
 import guldilin.entity.Coordinates;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,12 +59,13 @@ public class CoordinatesController {
 
     @SneakyThrows
     @PutMapping("{id}")
-    public void replaceItem(@PathVariable Integer id, @RequestBody CoordinatesDTO coordinatesDTO) {
-        crudController.replaceItem(id, coordinatesDTO);
+    public CoordinatesDTO replaceItem(@PathVariable Integer id, @RequestBody CoordinatesDTO coordinatesDTO) {
+        return (CoordinatesDTO) crudController.replaceItem(id, coordinatesDTO);
     }
 
     @SneakyThrows
     @DeleteMapping("{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteItem(@PathVariable Integer id) {
         crudController.deleteItem(id);
     }

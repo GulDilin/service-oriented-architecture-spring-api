@@ -2,22 +2,203 @@
 
 ### Variant 3005.11
 
+### How to deploy
+
+#### External Tomcat
+1. startup tomcat server
+2. Add a corresponding server block to your settings.xml (Usually `C:\Users\user\.m2\settings.xml`:
+```xml
+<settings>
+  ...
+  <servers>
+    ...
+    <server>
+      <id>myserver</id>
+      <username>myusername</username>
+      <password>mypassword</password>
+    </server>
+    ...
+  </servers>
+  ...
+</settings>
+```
+
+3. In pom.xml edit tomcat data
+```xml
+<configuration>
+    <url>http://localhost:26449/manager/text</url>
+    <server>TomcatHelios</server>
+    <path>/soa-storage</path>
+</configuration>
+```
+4. In `path/to/tomcat/bin` edit `setenv.sh` (if not presented - create) and setup env vars described below.
+You can use `VAR_NAME=VALUE; export VAR_NAME`
+5. Build project with `mvn clean install`
+6. Deploy with command `mvn tomcat7:deploy`
+7. Next times you can redeploy with `mvn tomcat7:redeploy`
+
+#### Environment settings
+| Variable    | Required           | Example   |
+|-------------|--------------------|-----------|
+| DB_NAME     | :white_check_mark: | `soa      ` |
+| DB_HOST     | :white_check_mark: | `127.0.0.1` |
+| DB_PORT     | :white_check_mark: | `5432     ` |
+| DB_USER     | :white_check_mark: | `postgres ` |
+| DB_PASS     | :white_check_mark: | `postgres ` |
+| DB_SHOW_SQL | :x:                | `false`     |
+| DB_USE_SQL_COMMENTS | :x:        | `false`     |
+
+### Setup SSL on tomcat
+
+1. Generate keystore and certificate with next 2 commands
+2. `keytool -genkeypair -keystore server.keystore -alias localhost -ext san=dns:localhost -keyalg rsa -deststoretype jks Picked up _JAVA_OPTIONS: -Xmx128M -Xms128M`
+3. `keytool -keystore server.keystore -alias localhost -ext san=dns:localhost -exportcert -rfc > server.crt`
+4. `keytool -import -noprompt -alias localhost -file server.crt -storepass ${PASSPHRASE} -keystore truststore.jks`
+5. open `$CATALINA_BASE/conf/server.xml` (if `$CATALINA_BASE` not set - it is `/path/to/apache-base-dir`)
+6. To Connectors section add
+```xml
+
+<Connector  port="26443"
+            protocol="HTTP/1.1"
+            maxThreads="150"
+            scheme="https"
+            secure="true"
+            SSLEnabled="true"
+            SSLCertificateFile="server.crt"
+            keystoreFile="server.keystore"
+            keyAlias="localhost"
+            keystorePass="password"
+            clientAuth="false"
+            sslProtocol="TLS"
+            ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
+A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
+TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
+S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
+            sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+/>
+
+```
+4. If you chose another port instead of 8443 you need to change `redirectPort` in your default connectors
+5. Now your can access your app with https, but got `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT` or analogical error because of self-signed
+   cert
+
+### Fix Self-Signed certificate error
+
+1. To fix this error you need to download `server.crt` to your computer and add to trusted
+2. `Win + R` and run `mmc`
+   ![Run mmc](./ssl-guide-images/run.png)
+3. Add certificate
+4. Click `Ctrl + M`
+   ![Run mmc](ssl-guide-images/mmc-1.png)
+5. Choose certificates and click `Add`
+   ![Run mmc](ssl-guide-images/mmc-2.png)
+6. Enter the last choice and next
+   ![Run mmc](ssl-guide-images/mmc-3.png)
+7. Choose local computer
+   ![Run mmc](ssl-guide-images/mmc-4.png)
+8. Choose Trusted root certificate folder and click `All Tasks > import` in context menu
+   ![Run mmc](ssl-guide-images/mmc-5.png)
+9. Next
+   ![Run mmc](ssl-guide-images/mmc-6.png)
+10. Next
+   ![Run mmc](ssl-guide-images/mmc-7.png)
+
+
+### Another way to generate certs for emulation chain
+```shell
+# Create a Root-CA private keystore capable of issuing SSL certificates
+keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ca.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
+keytool -genkeypair -noprompt -alias my-ca -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ca.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
+
+# Export the Root-CA certificate, to be used in the final SSL chain
+keytool -exportcert -alias my-ca -keystore my-ca.jks -storepass pass77 -keypass pass77 -file my-ca.crt -rfc \
+-ext ku:critical=cRLSign,keyCertSign \
+-ext bc:critical=ca:true,pathlen:1
+
+# Create a container SSL private keystore (external localhost.foo.bar dns entry optional:IE11 domain intranet policy)
+keytool -genkeypair -noprompt -alias my-ssl -keyalg RSA -keysize 2048 -dname CN=localhost -validity 3650 -keystore \
+my-ssl.jks -storepass pass77 -keypass pass77 \
+-ext ku:critical=digitalSignature,keyEncipherment \
+-ext eku=serverAuth,clientAuth \
+-ext san=dns:localhost,dns:localhost.foo.bar \
+-ext bc:critical=ca:false
+
+# Create a certificate signing request (CSR) from our SSL private keystore
+keytool -certreq -keyalg RSA -alias my-ssl -file my-ssl.csr -keystore my-ssl.jks -keypass pass77 -storepass pass77
+
+# Issue an SSL certificate from the Root-CA private keystore in response to the request (external localhost.foo.bar dns entry optional)
+keytool -keypass pass77 -storepass pass77 -validity 3650 -keystore my-ca.jks -gencert -alias my-ca -infile my-ssl.csr \
+ -ext ku:critical=digitalSignature,keyEncipherment \
+ -ext eku=serverAuth,clientAuth \
+ -ext san=dns:localhost,dns:localhost.foo.bar \
+ -ext bc:critical=ca:false \
+ -rfc -outfile my-ssl.crt
+
+# Import Root-CA certificate into SSL private keystore
+keytool  -noprompt -import -trustcacerts -alias my-ca -file my-ca.crt -keystore my-ssl.jks \
+-keypass pass77 -storepass pass77
+
+# Import an SSL (chained) certificate into keystore
+keytool -import -trustcacerts -alias my-ssl -file my-ssl.crt -keystore my-ssl.jks \
+-keypass pass77 -storepass pass77 -noprompt
+
+# you got such files
+# * my-ca.jks
+# * my-ca.crt
+# * my-ssl.jks
+# * my-ssl.csr
+# * my-ssl.crt
+```
+
+Result Connector config
+
+```xml
+
+<Connector port="26443"
+           protocol="HTTP/1.1"
+           maxThreads="150"
+           scheme="https"
+           secure="true"
+           SSLEnabled="true"
+           keystoreFile="my-ssl.jks"
+           keyAlias="my-ssl"
+           keystorePass="pass77"
+           SSLCertificateFile="my-ssl.crt"
+           clientAuth="false"
+           sslProtocol="TLS"
+           ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SH
+A,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WI
+TH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AE
+S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
+           sslEnabledProtocols="TLSv1.2,TLSv1.1,TLSv1"
+/>
+```
+
 ### Доработать веб-сервис и клиентское приложение из лабораторной работы #1 следующим образом:
 
-1. Отрефакторить сервис из лабораторной работы #1, переписав его на фреймворке Spring MVC REST с сохранением функциональности и API.
-Набор функций, реализуемых сервисом, изменяться не должен!
+1. Отрефакторить сервис из лабораторной работы #1, переписав его на фреймворке Spring MVC REST с сохранением
+   функциональности и API. Набор функций, реализуемых сервисом, изменяться не должен!
 2. Развернуть переработанный сервис на сервере приложений Tomcat.
 3. Разработать новый сервис, вызывающий API существующего.
 4. Новый сервис должен быть разработан на базе JAX-RS и развёрнут на сервере приложений Payara.
 5. Разработать клиентское приложение, позволяющее протестировать API нового сервиса.
-6. Доступ к обоим сервисам должен быть реализован с по протоколу https с самоподписанным сертификатом сервера. Доступ к сервисам посредством http без шифрования должен быть запрещён.
+6. Доступ к обоим сервисам должен быть реализован с по протоколу https с самоподписанным сертификатом сервера. Доступ к
+   сервисам посредством http без шифрования должен быть запрещён.
 
 ### Новый сервис должен располагаться на URL /route и реализовывать следующие операции:
+
 ```
 /calculate/length/{id1}/{id2} : рассчитать длину маршрута из города с id=id1 в город с id=id2
 /calculate/to-max-populated : рассчитать длину маршрута от точки с координатами (0,0,0) до города с максимальным населением
 ```
-    
 
 ### Оба веб-сервиса и клиентское приложение должны быть развёрнуты на сервере helios.
 
@@ -39,8 +220,6 @@
 14. Доверенные центры сертификации. Иерархия сертификатов, самоподписанные сертификаты.
 15. Настройка защищённого соединения в Java. Доверенные узлы, хранилища сертификатов.
 16. Keystore & Truststore. Утилита keytool.
-
-
 
 # Service Oriented Architecture. Laboratory Work 1
 

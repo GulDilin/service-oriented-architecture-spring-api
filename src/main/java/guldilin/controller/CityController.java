@@ -1,6 +1,7 @@
 package guldilin.controller;
 
 import guldilin.dto.CityDTO;
+import guldilin.dto.EntityListDTO;
 import guldilin.entity.City;
 import guldilin.entity.Coordinates;
 import guldilin.entity.Human;
@@ -8,16 +9,17 @@ import guldilin.errors.ErrorMessage;
 import guldilin.errors.ValidationException;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Objects;
 
-@WebServlet("/api/city/*")
-public class CityController extends HttpServlet {
+@RestController
+@RequestMapping("/api/city")
+public class CityController {
     private final CrudRepositoryImpl<Human> repositoryHuman;
     private final CrudRepositoryImpl<Coordinates> repositoryCoordinates;
     private final CrudController<City, CityDTO> crudController;
@@ -61,26 +63,38 @@ public class CityController extends HttpServlet {
     }
 
     @SneakyThrows
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doGet(request, response);
+    @GetMapping
+    public EntityListDTO getItems(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) String[] sorting,
+            HttpServletRequest request
+    ) {
+        return crudController.getItems(limit, offset, sorting, request);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPost(request, response);
+    @GetMapping("/{id}")
+    public CityDTO getItemById(@PathVariable Integer id) {
+        return(CityDTO) crudController.getById(id);
     }
 
     @SneakyThrows
-    @Override
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doPut(request, response);
+    @PostMapping()
+    public CityDTO createItem(@RequestBody CityDTO cityDTO) {
+        return (CityDTO) crudController.createItem(cityDTO);
     }
 
     @SneakyThrows
-    @Override
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) {
-        crudController.doDelete(request);
+    @PutMapping("/{id}")
+    public CityDTO replaceItem(@PathVariable Integer id, @RequestBody CityDTO cityDTO) {
+        return (CityDTO) crudController.replaceItem(id, cityDTO);
+    }
+
+    @SneakyThrows
+    @DeleteMapping("/{id}")
+    @ResponseStatus(value = HttpStatus.NO_CONTENT)
+    public void deleteItem(@PathVariable Integer id) {
+        crudController.deleteItem(id);
     }
 }

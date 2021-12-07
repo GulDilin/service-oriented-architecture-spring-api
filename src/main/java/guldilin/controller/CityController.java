@@ -76,6 +76,7 @@ public class CityController {
     @SneakyThrows
     @GetMapping("/{id}")
     public CityDTO getItemById(@PathVariable Integer id) {
+        //TODO refactor with creation mapToDto method in controller to avoid cast
         return(CityDTO) crudController.getById(id);
     }
 

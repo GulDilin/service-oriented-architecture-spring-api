@@ -1,5 +1,6 @@
 package guldilin.controller;
 
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import guldilin.dto.ErrorDTO;
 import guldilin.dto.ValidationErrorDTO;
 import guldilin.errors.*;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -95,6 +97,32 @@ public class ErrorController {
         else return handleDefaultError(throwable, throwable.getClass().getName());
     }
 
+    protected Object handleJsonException(Throwable throwable) {
+        throwable.printStackTrace();
+        ErrorCode code = ErrorCode.JSON_SYNTAX_ERROR;
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(
+                        ErrorDTO.builder()
+                                .error(code.name())
+                                .message(throwable.getMessage())
+                                .build()
+                );
+    }
+
+    protected Object handleDataFormatException(Throwable throwable) {
+        throwable.printStackTrace();
+        ErrorCode code = ErrorCode.INCORRECT_DATA_FORMAT;
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(
+                        ErrorDTO.builder()
+                                .error(code.name())
+                                .message(throwable.getMessage())
+                                .build()
+                );
+    }
+
     @ResponseBody
     @ExceptionHandler(Exception.class)
     protected Object handleException(Throwable throwable) throws IOException {
@@ -107,7 +135,13 @@ public class ErrorController {
             case "javax.persistence.PersistenceException":
                 return handlePersistenceException(throwable);
             case "java.lang.IllegalArgumentException":
+            case "org.springframework.http.converter.HttpMessageNotReadableException":
                 return handleCauseException(throwable);
+            case "com.fasterxml.jackson.core.io.JsonEOFException":
+            case "com.fasterxml.jackson.core.JsonParseException":
+                return handleJsonException(throwable);
+            case "com.fasterxml.jackson.databind.exc.InvalidFormatException":
+                return handleDataFormatException(throwable);
             default:
                 return handleDefaultError(throwable, errorName);
         }

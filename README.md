@@ -81,6 +81,42 @@ S_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA"
 4. If you chose another port instead of 8443 you need to change `redirectPort` in your default connectors
 5. Now your can access your app with https, but got `MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT` or analogical error because of self-signed
    cert
+   
+### Only HTTPS in app
+To `web.xml` add next configuration part
+```xml
+<security-constraint>
+    <web-resource-collection>
+        <web-resource-name>Secured</web-resource-name>
+        <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+
+    <user-data-constraint>
+        <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+</security-constraint>
+```
+
+### CORS settings
+To `web.xml` add next configuration part
+```xml
+<filter>
+    <filter-name>CorsFilter</filter-name>
+    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+    <init-param>
+        <param-name>cors.allowed.origins</param-name>
+        <param-value>*</param-value>
+    </init-param>
+    <init-param>
+        <param-name>cors.allowed.methods</param-name>
+        <param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
+    </init-param>
+    <init-param>
+        <param-name>cors.exposed.headers</param-name>
+        <param-value>Access-Control-Allow-Origin,Access-Control-Allow-Credentials</param-value>
+    </init-param>
+</filter>
+```
 
 ### Fix Self-Signed certificate error
 

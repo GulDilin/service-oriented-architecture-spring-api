@@ -138,7 +138,7 @@ To `web.xml` add next configuration part
    ![Run mmc](ssl-guide-images/mmc-6.png)
 10. Next
    ![Run mmc](ssl-guide-images/mmc-7.png)
-
+11. Restart your browser
 
 ### Another way to generate certs for emulation chain
 ```shell

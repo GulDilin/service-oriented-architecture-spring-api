@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/human")
+@RequestMapping(value = "/api/human", produces = "application/json")
 public class HumanController {
     private final CrudController<Human, HumanDTO> crudController;
 

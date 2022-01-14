@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/coordinates")
+@RequestMapping(value="/api/coordinates", produces = "application/json")
 public class CoordinatesController {
     private final CrudController<Coordinates, CoordinatesDTO> crudController;
 

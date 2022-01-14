@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/api/city")
+@RequestMapping(value = "/api/city", produces = "application/json")
 public class CityController {
     private final CrudRepositoryImpl<Human> repositoryHuman;
     private final CrudRepositoryImpl<Coordinates> repositoryCoordinates;

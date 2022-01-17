@@ -10,7 +10,6 @@ import guldilin.errors.ValidationException;
 import guldilin.repository.implementation.CrudRepositoryImpl;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -70,13 +69,14 @@ public class CityController {
             @RequestParam(required = false) String[] sorting,
             HttpServletRequest request
     ) {
+        System.out.println("Get all request"); // to check load balancing
         return crudController.getItems(limit, offset, sorting, request);
     }
 
     @SneakyThrows
     @GetMapping("/{id}")
     public CityDTO getItemById(@PathVariable Integer id) {
-        //TODO refactor with creation mapToDto method in controller to avoid cast
+        //TODO: refactor with creation mapToDto method in controller to avoid cast
         return(CityDTO) crudController.getById(id);
     }
 

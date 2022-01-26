@@ -1,6 +1,5 @@
 package guldilin.controller;
 
-import com.fasterxml.jackson.core.io.JsonEOFException;
 import guldilin.dto.ErrorDTO;
 import guldilin.dto.ValidationErrorDTO;
 import guldilin.errors.*;
@@ -11,11 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.persistence.EntityNotFoundException;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
